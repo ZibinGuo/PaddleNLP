@@ -23,7 +23,8 @@ import paddle
 import paddle.distributed.fleet as fleet
 from paddle.io import DataLoader
 from paddle.metric import Accuracy
-
+import sys
+sys.path.append('/framework/PaddleNLP/')
 from paddlenlp.data import Pad, Stack, Tuple
 from paddlenlp.datasets import load_dataset
 from paddlenlp.metrics import Mcc, PearsonAndSpearman
@@ -319,7 +320,9 @@ def do_train(args):
     # Create the training-forward program, and clone it for the validation
     with paddle.static.program_guard(main_program, startup_program):
         num_class = 1 if train_ds.label_list is None else len(train_ds.label_list)
+        # print("==========================1==============================")
         model, pretrained_state_dict = model_class.from_pretrained(args.model_name_or_path, num_classes=num_class)
+        # print("==========================2==============================")
         loss_fct = paddle.nn.loss.CrossEntropyLoss() if train_ds.label_list else paddle.nn.loss.MSELoss()
         logits = model(input_ids, token_type_ids)
         loss = loss_fct(logits, labels)

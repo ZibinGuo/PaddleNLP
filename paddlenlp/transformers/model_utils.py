@@ -743,13 +743,13 @@ def _convert_state_dict_dtype_and_shape(state_dict, model_to_load):
                 )
             # confirm parameter cast is executed on the same device as model
             # TODO: cast(FP32 -> FP16) has diff on different devices, need to fix it
-            if state_dict[key].is_floating_point() and state_dict[key].dtype != value.dtype:
-                value_pop = state_dict.pop(key)
-                value_new_place = (
-                    value_pop if value_pop.place == expected_place else value_pop._copy_to(expected_place, False)
-                )
-                state_dict[key] = paddle.cast(value_new_place, value.dtype)._copy_to(value_pop.place, False)
-                del value_new_place
+            # if state_dict[key].is_floating_point() and state_dict[key].dtype != value.dtype:
+            #     value_pop = state_dict.pop(key)
+            #     value_new_place = (
+            #         value_pop if value_pop.place == expected_place else value_pop._copy_to(expected_place, False)
+            #     )
+            #     state_dict[key] = paddle.cast(value_new_place, value.dtype)._copy_to(value_pop.place, False)
+            #     del value_new_place
             # unified 0d and 1d tensor
             if is_0d_or_1d(value) and is_0d_or_1d(state_dict[key]):
                 if list(value.shape) != list(state_dict[key].shape):
@@ -2195,7 +2195,9 @@ class PretrainedModel(Layer, GenerationMixin, ConversionMixin):
             else:
                 state_dict = load_state_dict(resolved_archive_file)
 
+            # print("==========================1.1==============================")
             logger.info("Loaded weights file from disk, setting weights to model.")
+            # print("==========================1.2==============================")
 
         # Check if `_keep_in_fp32_modules` is not None
         use_keep_in_fp32_modules = (cls._keep_in_fp32_modules is not None) and (
@@ -2206,7 +2208,7 @@ class PretrainedModel(Layer, GenerationMixin, ConversionMixin):
             loaded_state_dict_keys = [k for k in state_dict.keys()]
             # will only support load paddle.Tensor to model.
             for k in list(state_dict.keys()):
-                if not isinstance(state_dict[k], paddle.Tensor):
+                if not isinstance(state_dict[k], (paddle.Tensor, paddle.base.libpaddle.Tensor)):
                     with device_guard():
                         state_dict[k] = paddle.Tensor(state_dict.pop(k), zero_copy=True)
         else:
@@ -2221,7 +2223,7 @@ class PretrainedModel(Layer, GenerationMixin, ConversionMixin):
         # will only support load paddle.Tensor to model.
         if state_dict is not None:
             for k in list(state_dict.keys()):
-                if not isinstance(state_dict[k], paddle.Tensor):
+                if not isinstance(state_dict[k], (paddle.Tensor, paddle.base.libpaddle.Tensor)):
                     with device_guard():
                         state_dict[k] = paddle.Tensor(state_dict.pop(k), zero_copy=True)
         # 3. init the model
